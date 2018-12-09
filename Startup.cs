@@ -1,16 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
+﻿using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 
 namespace DotnetAwsCognito
 {
@@ -31,13 +25,26 @@ namespace DotnetAwsCognito
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
-            
-            services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-                .AddJwtBearer(options =>
+
+            services.AddAuthentication(options =>
                 {
-                    options.Audience = Configuration["AWS:CLIENT_ID"];
-                    options.Authority = $"https://cognito-idp.us-east-2.amazonaws.com/{Configuration["AWS:USERPOOL_ID"]}";
+                    options.DefaultAuthenticateScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+                    options.DefaultSignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+                    options.DefaultChallengeScheme = OpenIdConnectDefaults.AuthenticationScheme;
+                })
+                .AddCookie()
+                .AddOpenIdConnect(options =>
+                {
+                    options.SignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+                    options.ResponseType = Configuration["Authentication:Cognito:ResponseType"];
+                    options.MetadataAddress = Configuration["Authentication:Cognito:MetadataAddress"];
+                    options.ClientId = Configuration["Authentication:Cognito:ClientId"];
                 });
+//                .AddGoogle(options =>
+//                {
+//                    options.ClientId = Configuration["Authentication:Google:ClientId"];
+//                    options.ClientSecret = Configuration["Authentication:Google:ClientSecret"];
+//                });
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
